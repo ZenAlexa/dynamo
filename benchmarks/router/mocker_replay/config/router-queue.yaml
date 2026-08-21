@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Queue at the router only after every eligible worker exceeds 90% of its
+# advertised maximum batched-token capacity. The limit scales with workers.
+default_policy_family: standard
+uncached_isl_buckets:
+  - min_tokens: 0
+    bucket: all
+policy_classes:
+  - name: standard
+    policy_family: standard
+    cache_bucket: all
+    queue_policy: fcfs
+    quantum: 1
+    prefill_busy_threshold_frac: 0.9
+    request_queue_limit_per_worker: 256

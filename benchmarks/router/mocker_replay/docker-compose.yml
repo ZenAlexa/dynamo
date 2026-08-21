@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+services:
+  nats:
+    build:
+      context: .
+      dockerfile: Dockerfile.nats
+    image: dynamo-mocker-replay-nats
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    ports:
+      - "${NATS_PORT}:4222"
+      - "${NATS_MONITORING_PORT}:8222"
+  etcd:
+    image: bitnamilegacy/etcd:3.6.1
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+    ports:
+      - "${ETCD_PORT}:2379"
+  prometheus:
+    build:
+      context: .
+      dockerfile: Dockerfile.prometheus
+    image: dynamo-mocker-replay-prometheus
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${PROMETHEUS_PORT}:9090"

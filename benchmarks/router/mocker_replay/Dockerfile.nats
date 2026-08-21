@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+FROM nats:2.11.4
+COPY config/nats-server.conf /etc/nats/nats-server.conf

@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "dynamo-mocker-replay-policy-catalog"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Worker-selection policy catalog for the mocker replay session cohort demo"
+
+[dependencies]
+session-cohort-sglang-policy = { package = "dynamo-mocker-replay-session-cohort-sglang", path = "../session-cohort-sglang" }
+dynamo-kv-router = { workspace = true, features = ["standalone-selection"] }

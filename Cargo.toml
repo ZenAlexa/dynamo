@@ -13,6 +13,8 @@ members = [
     "lib/mocker",
     "lib/kv-router",
     "lib/router-plugins/catalog",
+    "benchmarks/router/mocker_replay/policy/session-cohort-sglang",
+    "benchmarks/router/mocker_replay/policy/catalog",
     "examples/router/custom-policy-example/simple-filter-score-pick",
     "examples/router/custom-policy-example/catalog",
     "examples/router/custom-policy-example/disagg-filter-score-pick",

@@ -2829,6 +2829,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "dynamo-mocker-replay-policy-catalog"
+version = "1.5.0"
+dependencies = [
+ "dynamo-kv-router",
+ "dynamo-mocker-replay-session-cohort-sglang",
+]
+
+[[package]]
+name = "dynamo-mocker-replay-session-cohort-sglang"
+version = "1.5.0"
+dependencies = [
+ "dynamo-kv-router",
+ "serde",
+ "tracing",
+ "xxhash-rust",
+]
+
+[[package]]
 name = "dynamo-parsers"
 version = "8.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

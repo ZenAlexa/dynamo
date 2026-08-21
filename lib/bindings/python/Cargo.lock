@@ -1794,6 +1794,7 @@ dependencies = [
  "dynamo-kv-router",
  "dynamo-memory",
  "dynamo-mocker",
+ "dynamo-mocker-replay-policy-catalog",
  "dynamo-parsers",
  "dynamo-parsers-v2",
  "dynamo-protocols",
@@ -2250,6 +2251,24 @@ name = "dynamo-worker-selection-policy-catalog"
 version = "1.5.0"
 dependencies = [
  "dynamo-kv-router",
+]
+
+[[package]]
+name = "dynamo-mocker-replay-policy-catalog"
+version = "1.5.0"
+dependencies = [
+ "dynamo-kv-router",
+ "dynamo-mocker-replay-session-cohort-sglang",
+]
+
+[[package]]
+name = "dynamo-mocker-replay-session-cohort-sglang"
+version = "1.5.0"
+dependencies = [
+ "dynamo-kv-router",
+ "serde",
+ "tracing",
+ "xxhash-rust",
 ]
 
 [[package]]

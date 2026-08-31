@@ -2172,14 +2172,6 @@ body:has(input[name="recipe-usecase"][value="agentic"]:checked) [data-usecase]:n
     display: none;
 }
 
-/* Kimi-K3 currently publishes only the SGLang GB300 aggregated recipe. Keep
-   the picker empty-state visible while hiding the remainder of the page for
-   unavailable SGLang combinations. */
-body:has(#recipe-framework-sglang:checked):has(#recipe-sku-gb200:checked) .dynamo-kimi-k3-content,
-body:has(#recipe-framework-sglang:checked):has(#recipe-sku-gb300:checked):has(#recipe-variant-disagg:checked) .dynamo-kimi-k3-content {
-    display: none;
-}
-
 /* Highlight the matching row in an expected-performance or comparison table */
 body:has(input[name="recipe-sku"]:checked) tr[data-sku][data-usecase] {
     opacity: 0.55;

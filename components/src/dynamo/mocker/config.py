@@ -21,6 +21,7 @@ _DEFAULT_MAX_NUM_BATCHED_TOKENS = 8192
 _DEFAULT_AIC_SYSTEM = "h200_sxm"
 _DEFAULT_VLLM_BLOCK_SIZE = 64
 _DEFAULT_SGLANG_BLOCK_SIZE = 1
+_SGLANG_GENERATE_CAPABILITY = "sglang_generate"
 # Recent TRT-LLM PyTorch backend default tokens_per_block (older builds use 64).
 _DEFAULT_TRTLLM_BLOCK_SIZE = 32
 
@@ -339,6 +340,8 @@ def apply_worker_engine_args_overrides(
 
 def build_runtime_config(
     engine_args: MockEngineArgs,
+    *,
+    sglang_generate: bool = False,
 ) -> tuple[int, ModelRuntimeConfig]:
     rc = ModelRuntimeConfig()
     rc.context_length = engine_args.max_model_len or 0
@@ -358,6 +361,8 @@ def build_runtime_config(
     )
     rc.data_parallel_size = engine_args.dp_size
     rc.set_engine_specific("output_replay_consumer", "true")
+    if sglang_generate:
+        rc.set_engine_specific(_SGLANG_GENERATE_CAPABILITY, "true")
 
     bootstrap_port = engine_args.bootstrap_port
     if engine_args.is_prefill() and bootstrap_port is not None:

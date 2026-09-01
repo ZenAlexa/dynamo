@@ -20,9 +20,7 @@ import aiohttp
 
 
 MASK64 = (1 << 64) - 1
-METRIC_RE = re.compile(
-    r"^([A-Za-z_:][A-Za-z0-9_:]*)(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"
-)
+METRIC_RE = re.compile(r"^([A-Za-z_:][A-Za-z0-9_:]*)(?:\{[^}]*\})?\s+([0-9.eE+-]+)$")
 
 
 def token_for(hash_id: int, offset: int) -> int:
@@ -303,9 +301,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                     for turn, row in enumerate(rows):
                         if turn:
                             await asyncio.sleep(
-                                float(row.get("delay", 0.0))
-                                * args.delay_scale
-                                / 1000.0
+                                float(row.get("delay", 0.0)) * args.delay_scale / 1000.0
                             )
                         new_input = materialize_input(row, args.trace_block_size)
                         if turn == 0:
@@ -403,8 +399,12 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         if observed_samples
         else math.nan,
         "metric_samples": metric_samples,
-        "per_second_output_tokens": [token_bins[second] for second in range(max_second + 1)],
-        "per_second_requests": [request_bins[second] for second in range(max_second + 1)],
+        "per_second_output_tokens": [
+            token_bins[second] for second in range(max_second + 1)
+        ],
+        "per_second_requests": [
+            request_bins[second] for second in range(max_second + 1)
+        ],
         "errors": error_samples,
     }
 

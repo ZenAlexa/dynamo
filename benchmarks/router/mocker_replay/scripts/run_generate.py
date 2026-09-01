@@ -233,6 +233,12 @@ async def generate(
 
 async def run(args: argparse.Namespace) -> dict[str, Any]:
     sessions = load_sessions(args.trace, args.max_sessions, args.max_turns)
+    if not 0 <= args.session_shard_index < args.session_shard_count:
+        raise ValueError(
+            "session shard index must be in "
+            f"[0, {args.session_shard_count}), got {args.session_shard_index}"
+        )
+    sessions = sessions[args.session_shard_index :: args.session_shard_count]
     urls = args.url or ["http://127.0.0.1:28001"]
     frontend_ports = ports(args.frontend_ports_file)
     mocker_ports = ports(args.mocker_ports_file)
@@ -356,6 +362,8 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         "urls": urls,
         "url_requests": dict(url_requests),
         "sessions": len(sessions),
+        "session_shard_index": args.session_shard_index,
+        "session_shard_count": args.session_shard_count,
         "expected_requests": expected_requests,
         "successful_requests": len(request_stats),
         "failed_sessions": error_count,
@@ -408,6 +416,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--concurrency", type=int, default=512)
     parser.add_argument("--max-sessions", type=int)
     parser.add_argument("--max-turns", type=int)
+    parser.add_argument("--session-shard-index", type=int, default=0)
+    parser.add_argument("--session-shard-count", type=int, default=1)
     parser.add_argument("--trace-block-size", type=int, default=512)
     parser.add_argument("--delay-scale", type=float, default=1.0)
     parser.add_argument("--frontend-ports-file", type=Path)

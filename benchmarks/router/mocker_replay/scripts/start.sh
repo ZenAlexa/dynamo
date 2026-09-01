@@ -32,6 +32,7 @@ fi
 source "$ROOT/config/mocker.env"
 # shellcheck disable=SC1090
 source "$TOPOLOGY_FILE"
+MOCKER_SGLANG_GENERATE="${MOCKER_SGLANG_GENERATE:-0}"
 mkdir -p "$ROOT/generated" "$ROOT/logs" "$ROOT/artifacts"
 
 if [[ -f "$ROOT/logs/topology" ]]; then
@@ -119,6 +120,13 @@ WORKERS_PER_SHARD=$((WORKER_COUNT / SHARD_COUNT))
 : > "$ROOT/logs/mocker.pids"
 : > "$ROOT/logs/mocker.ports"
 
+mocker_generate_args=()
+frontend_generate_env=()
+if [[ "$MOCKER_SGLANG_GENERATE" == 1 ]]; then
+    mocker_generate_args=(--sglang-generate)
+    frontend_generate_env=(DYN_SGLANG_ENABLE_GENERATE=1)
+fi
+
 for ((worker = 0; worker < WORKER_COUNT; worker++)); do
     shard=$((worker / WORKERS_PER_SHARD))
     worker_namespace="$BASE_NAMESPACE"
@@ -133,6 +141,7 @@ for ((worker = 0; worker < WORKER_COUNT; worker++)); do
         DYN_REQUEST_PLANE=tcp \
         DYN_EVENT_PLANE=nats \
         DYN_SYSTEM_PORT="$((SYSTEM_PORT_BASE + worker))" \
+        DYN_SYSTEM_USE_ENDPOINT_HEALTH_STATUS='["generate"]' \
         "$PYTHON" -m dynamo.mocker \
             --model-path "$MODEL_PATH" --model-name "$MODEL_NAME" --num-workers 1 \
             --engine-type "$MOCKER_ENGINE_TYPE" --block-size "$MOCKER_BLOCK_SIZE" \
@@ -147,6 +156,7 @@ for ((worker = 0; worker < WORKER_COUNT; worker++)); do
             --aic-backend-version "$AIC_BACKEND_VERSION" --aic-tp-size "$AIC_TP_SIZE" \
             --aic-moe-tp-size "$AIC_MOE_TP_SIZE" --aic-moe-ep-size "$AIC_MOE_EP_SIZE" \
             --aic-attention-dp-size "$AIC_ATTENTION_DP_SIZE" \
+            "${mocker_generate_args[@]}" \
         > "$ROOT/logs/mocker-$worker.log" 2>&1 &
     echo "$!" >> "$ROOT/logs/mocker.pids"
     echo "$((SYSTEM_PORT_BASE + worker))" >> "$ROOT/logs/mocker.ports"
@@ -195,6 +205,7 @@ for ((frontend = 0; frontend < FRONTEND_COUNT; frontend++)); do
         DYN_REQUEST_PLANE=tcp \
         DYN_EVENT_PLANE=nats \
         DYN_SYSTEM_PORT="$((SYSTEM_PORT_BASE + WORKER_COUNT + frontend))" \
+        "${frontend_generate_env[@]}" \
         "$PYTHON" -m dynamo.frontend "${frontend_args[@]}" "${policy_args[@]}" \
         > "$ROOT/logs/frontend-$frontend.log" 2>&1 &
     echo "$!" >> "$ROOT/logs/frontend.pids"

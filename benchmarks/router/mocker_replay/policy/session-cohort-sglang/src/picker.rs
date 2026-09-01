@@ -108,6 +108,38 @@ impl SessionCohortPicker {
         }
     }
 
+    fn build_fixed_cohort(
+        &mut self,
+        affinity_key: &str,
+        mut candidates: Vec<CandidateSignal>,
+        cohort_count: usize,
+    ) {
+        candidates.sort_unstable_by_key(|candidate| candidate.worker);
+        let cohort_index = xxh3_64_with_seed(affinity_key.as_bytes(), self.parameters.hash_seed)
+            as usize
+            % cohort_count;
+        let base_size = candidates.len() / cohort_count;
+        let larger_cohorts = candidates.len() % cohort_count;
+        let start = cohort_index * base_size + cohort_index.min(larger_cohorts);
+        let size = base_size + usize::from(cohort_index < larger_cohorts);
+        let hash_seed = self.parameters.hash_seed;
+        self.cohort.extend(
+            candidates
+                .into_iter()
+                .skip(start)
+                .take(size)
+                .map(|mut candidate| {
+                    let mut worker_bytes = [0_u8; 12];
+                    worker_bytes[..8].copy_from_slice(&candidate.worker.worker_id.to_le_bytes());
+                    worker_bytes[8..].copy_from_slice(&candidate.worker.dp_rank.to_le_bytes());
+                    let worker_seed = xxh3_64_with_seed(&worker_bytes, hash_seed);
+                    candidate.rendezvous_score =
+                        xxh3_64_with_seed(affinity_key.as_bytes(), worker_seed);
+                    candidate
+                }),
+        );
+    }
+
     fn least_loaded(&self) -> Option<CandidateSignal> {
         self.cohort
             .iter()
@@ -143,8 +175,12 @@ impl SessionCohortPicker {
         I: IntoIterator<Item = CandidateSignal>,
     {
         self.cohort.clear();
-        for candidate in candidates {
-            self.consider_for_cohort(affinity_key, candidate);
+        if let Some(cohort_count) = self.parameters.fixed_cohort_count {
+            self.build_fixed_cohort(affinity_key, candidates.into_iter().collect(), cohort_count);
+        } else {
+            for candidate in candidates {
+                self.consider_for_cohort(affinity_key, candidate);
+            }
         }
         let min_active_requests = self
             .cohort
@@ -241,6 +277,7 @@ impl WorkerPicker for SessionCohortPicker {
             affinity_source,
             affinity_hash,
             configured_cohort_size = self.parameters.cohort_size,
+            fixed_cohort_count = self.parameters.fixed_cohort_count,
             cohort = ?self.cohort,
             worker_id = decision.selected.worker.worker_id,
             dp_rank = decision.selected.worker.dp_rank,
@@ -263,6 +300,7 @@ mod tests {
     fn parameters(cohort_size: usize) -> Parameters {
         Parameters {
             cohort_size,
+            fixed_cohort_count: None,
             cache_threshold: 0.3,
             load_balance_abs_threshold: 284,
             load_balance_rel_threshold: 1.5,
@@ -295,7 +333,10 @@ mod tests {
         let second_decision = second.choose("session-a", 100, reversed).unwrap();
 
         assert_eq!(first_workers, worker_ids(&second));
-        assert_eq!(first_decision.selected.worker, second_decision.selected.worker);
+        assert_eq!(
+            first_decision.selected.worker,
+            second_decision.selected.worker
+        );
     }
 
     #[test]
@@ -373,5 +414,29 @@ mod tests {
         let decision = picker.choose("session-a", 100, candidates).unwrap();
         assert_ne!(decision.selected.worker.worker_id, excluded);
         assert_eq!(cohort, worker_ids(&picker));
+    }
+
+    #[test]
+    fn fixed_cohorts_are_six_disjoint_groups_of_four() {
+        let candidates: Vec<_> = (0..24)
+            .map(|worker| CandidateSignal::test(worker, 0, 0.0))
+            .collect();
+        let mut params = parameters(4);
+        params.fixed_cohort_count = Some(6);
+        let mut picker = SessionCohortPicker::new(params);
+        let mut observed = std::collections::BTreeSet::new();
+
+        for session in 0..1_000 {
+            picker
+                .choose(&format!("session-{session}"), 100, candidates.clone())
+                .unwrap();
+            let cohort = worker_ids(&picker);
+            assert_eq!(cohort.len(), 4);
+            observed.insert(cohort);
+        }
+
+        assert_eq!(observed.len(), 6);
+        let workers = observed.into_iter().flatten().collect::<Vec<_>>();
+        assert_eq!(workers, (0..24).collect::<Vec<_>>());
     }
 }

@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Approximate MAI's measured logical topology: one router partitions 24 stable
+# workers into six disjoint groups of four, then maps each session to one group.
+default_policy_family: standard
+uncached_isl_buckets:
+  - min_tokens: 0
+    bucket: all
+policy_classes:
+  - name: standard
+    policy_family: standard
+    cache_bucket: all
+    queue_policy: fcfs
+    quantum: 1
+    prefill_busy_threshold_frac: 0.9
+    request_queue_limit_per_worker: 256
+worker_selection:
+  aggregated: session-cohort-sglang
+  instances:
+    - name: session-cohort-sglang
+      type: session-cohort-sglang
+      parameters:
+        cohort_size: 4
+        fixed_cohort_count: 6
+        cache_threshold: 0.3
+        load_balance_abs_threshold: 284
+        load_balance_rel_threshold: 1.5
+        hash_seed: 6000292602789387825

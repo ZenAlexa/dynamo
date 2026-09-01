@@ -25,6 +25,7 @@ const DEFAULT_HASH_SEED: u64 = 0x5345_5353_494f_4e31;
 #[serde(default, deny_unknown_fields)]
 struct Parameters {
     cohort_size: usize,
+    fixed_cohort_count: Option<usize>,
     cache_threshold: f64,
     load_balance_abs_threshold: usize,
     load_balance_rel_threshold: f64,
@@ -35,6 +36,7 @@ impl Default for Parameters {
     fn default() -> Self {
         Self {
             cohort_size: DEFAULT_COHORT_SIZE,
+            fixed_cohort_count: None,
             cache_threshold: DEFAULT_CACHE_THRESHOLD,
             load_balance_abs_threshold: DEFAULT_LOAD_BALANCE_ABS_THRESHOLD,
             load_balance_rel_threshold: DEFAULT_LOAD_BALANCE_REL_THRESHOLD,
@@ -47,6 +49,11 @@ fn validate(parameters: Parameters) -> Result<Parameters, WorkerSelectionPolicyP
     if parameters.cohort_size == 0 {
         return Err(WorkerSelectionPolicyProviderError::new(
             "cohort_size must be greater than zero",
+        ));
+    }
+    if parameters.fixed_cohort_count == Some(0) {
+        return Err(WorkerSelectionPolicyProviderError::new(
+            "fixed_cohort_count must be greater than zero when configured",
         ));
     }
     if !parameters.cache_threshold.is_finite() || !(0.0..=1.0).contains(&parameters.cache_threshold)
@@ -98,6 +105,10 @@ mod tests {
 
         let mut invalid = Parameters::default();
         invalid.cohort_size = 0;
+        assert!(validate(invalid).is_err());
+
+        invalid = Parameters::default();
+        invalid.fixed_cohort_count = Some(0);
         assert!(validate(invalid).is_err());
 
         invalid = Parameters::default();

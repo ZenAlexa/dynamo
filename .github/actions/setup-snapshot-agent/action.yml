@@ -16,9 +16,9 @@ inputs:
   chart_version:
     description: 'github.com/ai-dynamo/snapshot chart version to install (pinned, never latest)'
     required: false
-    default: 0.1.0-alpha.1
+    default: 0.1.0-rc.1
   storage_size:
-    description: 'Checkpoint PVC size for agentMount mode'
+    description: 'Snapshot-managed checkpoint PVC size for agentMount mode'
     required: false
     default: 1Gi
   storage_access_mode:
@@ -80,7 +80,7 @@ runs:
           --set storage.pvc.name="${STORAGE_PVC_NAME}" \
           --set storage.pvc.accessMode="${STORAGE_PVC_ACCESS_MODE}" \
           --set storage.pvc.basePath="${STORAGE_BASE_PATH}" \
-          --set storage.pvc.create=false \
+          --set storage.pvc.create=true \
           --set storage.pvc.size="${STORAGE_SIZE}" \
           --debug
 

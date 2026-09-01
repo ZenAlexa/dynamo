@@ -22,12 +22,19 @@ Edit the `env` block in [`perf.yaml`](perf.yaml) and update the `podAffinity` `v
 | --- | --- | --- | --- |
 | H200 aggregated (agentic + 1M) | `dsv4-pro-0813-agg-h200-agentic-frontend:8000` | `6` | `/model-cache/traces/64k_400_90kv_agent_new_noschedule_short_15perc.jsonl` |
 | H200 disaggregated (agentic + 1M) | `dsv4-pro-0813-disagg-h200-agentic-frontend:8000` | `6` | `/model-cache/traces/64k_400_90kv_agent_new_noschedule_short_15perc.jsonl` |
-| GB200 aggregated agentic | `dsv4-pro-0813-agg-gb200-agentic-frontend:8000` | `8` | `/model-cache/traces/64k_400_90kv_agent_new_noschedule_short_15perc.jsonl` |
-| GB200 disaggregated agentic | `dsv4-pro-0813-disagg-gb200-agentic-frontend:8000` | `12` | `/model-cache/traces/64k_400_90kv_agent_new_noschedule_short_15perc.jsonl` |
+| GB200 aggregated agentic | `dsv4-pro-0813-agg-gb200-agentic-frontend:8000` | `8` | `/model-cache/benchmark/mooncake_full_3541.jsonl` |
+| GB200 disaggregated agentic | `dsv4-pro-0813-disagg-gb200-agentic-frontend:8000` | `10` | `/model-cache/benchmark/mooncake_full_3541.jsonl` |
 
 If you run more than one benchmark in the same namespace, also update
 `metadata.name` and `labels.app` so Jobs and artifact directories stay
 distinct.
+
+## Running on GB200 (arm64)
+
+Uncomment the `nodeSelector` (`kubernetes.io/arch: arm64`) in [`perf.yaml`](perf.yaml)
+before running either GB200 variant, and leave it commented for H200. The
+tolerations, `build-essential`, `python3-dev`, and the 8 h
+`activeDeadlineSeconds` apply to both architectures and need no change.
 
 ## Dataset
 
@@ -85,7 +92,7 @@ Keep `pvc-helper` for fetching artifacts, or delete it after staging.
 kubectl apply -f perf.yaml -n ${NAMESPACE}
 kubectl logs -n ${NAMESPACE} -l job-name=dsv4-pro-0813-bench -f
 kubectl wait --for=condition=Complete job/dsv4-pro-0813-bench \
-  -n ${NAMESPACE} --timeout=10800s
+  -n ${NAMESPACE} --timeout=28800s
 ```
 
 The Job runs on `python:3.12-slim` and installs AIPerf at startup, pinned
@@ -108,8 +115,10 @@ kubectl delete pod pvc-helper -n ${NAMESPACE}
 
 ## Running a concurrency sweep
 
-`perf.yaml` runs one `CONCURRENCY` value. Clear SGLang KV state and Dynamo
-frontend/router state between independent runs:
+`perf.yaml` runs one `CONCURRENCY` value. Restart the workers between
+independent runs so each row starts from a cold KV and prefix cache, and so
+Dynamo frontend/router state is cleared. Every published GB200 number was
+measured this way:
 
 ```bash
 kubectl delete job dsv4-pro-0813-bench -n ${NAMESPACE} --ignore-not-found
@@ -124,7 +133,7 @@ kubectl wait --for=condition=Ready pod -n ${NAMESPACE} \
 # Update CONCURRENCY in perf.yaml before each run.
 kubectl apply -f perf.yaml -n ${NAMESPACE}
 kubectl wait --for=condition=Complete job/dsv4-pro-0813-bench \
-  -n ${NAMESPACE} --timeout=10800s
+  -n ${NAMESPACE} --timeout=28800s
 ```
 
 Do not compare partial runs. A completed run must account for successful,
@@ -135,7 +144,7 @@ errored, and unfinished requests before reporting aggregate throughput.
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `ENDPOINT` | `dsv4-pro-0813-agg-h200-agentic-frontend:8000` | Change per DGD variant |
-| `TRACE_FILE` | `/model-cache/traces/64k_400_90kv_agent_new_noschedule_short_15perc.jsonl` | 3,541-request 15% agent trace |
+| `TRACE_FILE` | `/model-cache/traces/64k_400_90kv_agent_new_noschedule_short_15perc.jsonl` | 3,541-request 15% agent trace. GB200 runs used the same trace staged as `/model-cache/benchmark/mooncake_full_3541.jsonl` |
 | `SYNTHESIS_MAX_ISL` | `500000` | Use `250000` for H200 recipes |
 | `CONCURRENCY` | `6` | Single value; reset server state between values |
 | `TARGET_MODEL` | `deepseek-ai/DeepSeek-V4-Pro-0813` | Must match `--served-model-name` |

@@ -147,8 +147,8 @@ Joint gate: user output >= 50 tok/s **and** TTFT p50 < 5 s.
 
 | Workload | Recipe | SKU | Concurrency | System tok/s/GPU | User output tok/s (P50) | TTFT P50 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Agentic 64K | `agg-gb200-agentic` | 8x GB200 | 8 | 64.88 | 55.9 | 383 ms |
-| Agentic 64K | `disagg-gb200-agentic` | 16x GB200 | 12 | 50.31 | 50.0 | 2,370 ms |
+| Agentic 64K | `agg-gb200-agentic` | 8x GB200 | 8 | 69.45 | 51.85 | 403 ms |
+| Agentic 64K | `disagg-gb200-agentic` | 16x GB200 | 10 | 50.58 | 53.42 | 1,237 ms |
 | Agentic 64K | `agg-h200-agentic` | 8x H200 | 4 | 21.4 | 51.8 | 322 ms |
 | Agentic 64K | `disagg-h200-agentic` | 16x H200 | 4 | 13.1 | 57.2 | 441 ms |
 
@@ -158,3 +158,6 @@ full 3,541-request trace.
 On H200, aggregated is the better choice for this workload: it clears the same gate on **half
 the GPUs**, at 21.4 versus 13.1 system tok/s/GPU. Disaggregated buys a higher per-user rate
 (57.2 vs 51.8) and a slightly lower ITL, so it is an SLA choice rather than a throughput win.
+
+GB200 shows the same pattern: aggregated clears the gate on half the GPUs at 69.45 versus 50.58
+system tok/s/GPU.

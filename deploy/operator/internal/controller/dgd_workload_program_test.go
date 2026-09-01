@@ -383,7 +383,7 @@ func TestGroveProgram_ReconcilePreservesResultOnError(t *testing.T) {
 	result, err := program.Reconcile(context.Background(), workloadProgramRequest{DGD: dgd})
 
 	t.Log("Verify the failed shared reconciliation returns failure status without mutating request.DGD.Status")
-	require.ErrorContains(t, err, "RBAC manager not initialized")
+	require.ErrorContains(t, err, "planner ClusterRole name is required")
 	assert.Equal(t, previous.Components, result.Status.Components)
 	assert.Equal(t, nvidiacomv1beta1.DGDStateFailed, result.Status.State)
 	ready := meta.FindStatusCondition(result.Status.Conditions, "Ready")
@@ -410,7 +410,7 @@ func TestComponentProgram_ReconcileReturnsPartialRolloutStatusOnLaterError(t *te
 	result, err := program.Reconcile(context.Background(), workloadProgramRequest{DGD: dgd})
 
 	t.Log("Verify rollout status is returned on the later shared-input failure")
-	require.ErrorContains(t, err, "RBAC manager not initialized")
+	require.ErrorContains(t, err, "planner ClusterRole name is required")
 	require.NotNil(t, result.Status.RollingUpdate)
 	assert.Equal(t, nvidiacomv1beta1.RollingUpdatePhasePending, result.Status.RollingUpdate.Phase)
 	assert.Equal(t, nvidiacomv1beta1.DGDStateFailed, result.Status.State)

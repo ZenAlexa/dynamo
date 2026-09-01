@@ -427,4 +427,10 @@ def parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
-    print(json.dumps(asyncio.run(run(parse_args())), indent=2, sort_keys=True))
+    result = asyncio.run(run(parse_args()))
+    print(json.dumps(result, indent=2, sort_keys=True))
+    if (
+        result["failed_sessions"]
+        or result["successful_requests"] != result["expected_requests"]
+    ):
+        raise SystemExit(1)

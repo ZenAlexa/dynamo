@@ -35,6 +35,7 @@ use super::openai::{
 };
 use super::{RouteDoc, service_v2};
 use crate::local_model::runtime_config::SGLANG_GENERATE_CAPABILITY;
+use crate::protocols::common::extensions::{AgentContext, agent_context_from_headers};
 use crate::protocols::common::preprocessor::PreprocessedRequest;
 use crate::protocols::common::{OutputOptions, SamplingOptions, StopConditions};
 use crate::protocols::sglang::generate::SglangGenerateRequest;
@@ -179,6 +180,7 @@ fn preprocessed_request(
     model: &str,
     data_parallel_rank: Option<u32>,
     request_id: &str,
+    agent_context: Option<AgentContext>,
 ) -> anyhow::Result<PreprocessedRequest> {
     let max_tokens = request.max_new_tokens().map_err(anyhow::Error::msg)?;
     let min_tokens = request.min_new_tokens().map_err(anyhow::Error::msg)?;
@@ -212,6 +214,7 @@ fn preprocessed_request(
             priority: Some(routing_priority),
             ..Default::default()
         }))
+        .agent_context(agent_context)
         .extra_args(Some(serde_json::Value::Object(extra_args)))
         .build()
         .map_err(|error| anyhow::anyhow!("failed to build PreprocessedRequest: {error}"))
@@ -301,6 +304,7 @@ async fn handler(
         &model,
         request_context.data_parallel_rank,
         &request_context.request_id,
+        agent_context_from_headers(&headers),
     ) {
         Ok(preprocessed) => preprocessed,
         Err(error) => return error_response(StatusCode::BAD_REQUEST, error.to_string()),
@@ -507,5 +511,29 @@ mod tests {
             assert_eq!(error_type, expected_type);
             assert_eq!(body["error"]["message"], expected_message);
         }
+    }
+
+    #[test]
+    fn preprocessed_request_preserves_header_agent_context_for_routing() {
+        let request: SglangGenerateRequest = serde_json::from_value(serde_json::json!({
+            "input_ids": [1, 2, 3],
+            "sampling_params": {"max_new_tokens": 1},
+            "stream": true
+        }))
+        .unwrap();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-dynamo-session-id", "session-123".parse().unwrap());
+        let agent_context = agent_context_from_headers(&headers);
+
+        let request =
+            preprocessed_request(request, "model", None, "request-123", agent_context).unwrap();
+
+        assert_eq!(
+            request
+                .agent_context
+                .as_ref()
+                .map(|context| context.session_id.as_str()),
+            Some("session-123")
+        );
     }
 }

@@ -1794,7 +1794,6 @@ dependencies = [
  "dynamo-kv-router",
  "dynamo-memory",
  "dynamo-mocker",
- "dynamo-mocker-replay-policy-catalog",
  "dynamo-parsers",
  "dynamo-parsers-v2",
  "dynamo-protocols",
@@ -1916,6 +1915,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "dynamo-mocker-replay-policy-catalog"
+version = "1.5.0"
+dependencies = [
+ "dynamo-kv-router",
+ "dynamo-mocker-replay-session-cohort-sglang",
+]
+
+[[package]]
+name = "dynamo-mocker-replay-session-cohort-sglang"
+version = "1.5.0"
+dependencies = [
+ "dynamo-kv-router",
+ "serde",
+ "tracing",
+ "xxhash-rust",
+]
+
+[[package]]
 name = "dynamo-parsers"
 version = "8.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1987,13 +2004,13 @@ dependencies = [
  "dynamo-kv-router",
  "dynamo-llm",
  "dynamo-mocker",
+ "dynamo-mocker-replay-policy-catalog",
  "dynamo-parsers",
  "dynamo-runtime",
  "dynamo-sglang-sidecar",
  "dynamo-sidecar-common",
  "dynamo-trtllm-sidecar",
  "dynamo-vllm-sidecar",
- "dynamo-worker-selection-policy-catalog",
  "futures",
  "once_cell",
  "opentelemetry",
@@ -2244,31 +2261,6 @@ dependencies = [
  "tonic-build 0.13.1",
  "tonic-health",
  "tracing",
-]
-
-[[package]]
-name = "dynamo-worker-selection-policy-catalog"
-version = "1.5.0"
-dependencies = [
- "dynamo-kv-router",
-]
-
-[[package]]
-name = "dynamo-mocker-replay-policy-catalog"
-version = "1.5.0"
-dependencies = [
- "dynamo-kv-router",
- "dynamo-mocker-replay-session-cohort-sglang",
-]
-
-[[package]]
-name = "dynamo-mocker-replay-session-cohort-sglang"
-version = "1.5.0"
-dependencies = [
- "dynamo-kv-router",
- "serde",
- "tracing",
- "xxhash-rust",
 ]
 
 [[package]]
